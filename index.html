@@ -1,0 +1,1661 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Namo Tandoori Chai Admin Panel</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>☕</text></svg>">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode-generator/qrcode.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --background-light: #f7f8fa; --foreground-light: #1a1a1a; --card-light: #ffffff; --card-foreground-light: #1a1a1a; --popover-light: #ffffff; --popover-foreground-light: #1a1a1a; --primary-light: #1a1a1a; --primary-foreground-light: #ffffff; --secondary-light: #f1f2f4; --secondary-foreground-light: #1a1a1a; --muted-light: #e6e8eb; --muted-foreground-light: #6b7280; --accent-light: #f1f2f4; --accent-foreground-light: #1a1a1a; --destructive-light: #ef4444; --destructive-foreground-light: #f9fafb; --border-light: #e0e2e7; --input-light: #e0e2e7; --ring-light: #1a1a1a;
+            --background-dark: #121212; --foreground-dark: #fafafa; --card-dark: #1c1c1c; --card-foreground-dark: #fafafa; --popover-dark: #1c1c1c; --popover-foreground-dark: #fafafa; --primary-dark: #fafafa; --primary-foreground-dark: #121212; --secondary-dark: #2a2a2a; --secondary-foreground-dark: #fafafa; --muted-dark: #2a2a2a; --muted-foreground-dark: #a1a1aa; --accent-dark: #2a2a2a; --accent-foreground-dark: #fafafa; --destructive-dark: #b91c1c; --destructive-foreground-dark: #fafafa; --border-dark: #3a3a3a; --input-dark: #3a3a3a; --ring-dark: #fafafa;
+        }
+        .light {
+            --background: var(--background-light); --foreground: var(--foreground-light); --card: var(--card-light); --card-foreground: var(--card-foreground-light); --popover: var(--popover-light); --popover-foreground: var(--popover-foreground-light); --primary: var(--primary-light); --primary-foreground: var(--primary-foreground-light); --secondary: var(--secondary-light); --secondary-foreground: var(--secondary-foreground-light); --muted: var(--muted-light); --muted-foreground: var(--muted-foreground-light); --accent: var(--accent-light); --accent-foreground: var(--accent-foreground-light); --destructive: var(--destructive-light); --destructive-foreground: var(--destructive-foreground-light); --border: var(--border-light); --input: var(--input-light); --ring: var(--ring-light);
+        }
+        .dark {
+            --background: var(--background-dark); --foreground: var(--foreground-dark); --card: var(--card-dark); --card-foreground: var(--card-foreground-dark); --popover: var(--popover-dark); --popover-foreground: var(--popover-foreground-dark); --primary: var(--primary-dark); --primary-foreground: var(--primary-foreground-dark); --secondary: var(--secondary-dark); --secondary-foreground: var(--secondary-foreground-dark); --muted: var(--muted-dark); --muted-foreground: var(--muted-foreground-dark); --accent: var(--accent-dark); --accent-foreground: var(--accent-foreground-dark); --destructive: var(--destructive-dark); --destructive-foreground: var(--destructive-foreground-dark); --border: var(--border-dark); --input: var(--input-dark); --ring: var(--ring-dark);
+        }
+        body { background-color: var(--background); color: var(--foreground); font-family: 'Poppins', sans-serif; }
+        .bg-card { background-color: var(--card); }
+        .text-card-foreground { color: var(--card-foreground); }
+        .border-border { border-color: var(--border); }
+        .bg-primary { background-color: var(--primary); }
+        .text-primary-foreground { color: var(--primary-foreground); }
+        .bg-secondary { background-color: var(--secondary); }
+        .text-secondary-foreground { color: var(--secondary-foreground); }
+        .text-muted-foreground { color: var(--muted-foreground); }
+        .bg-destructive { background-color: var(--destructive); }
+        .text-destructive-foreground { color: var(--destructive-foreground); }
+        .ring-ring { box-shadow: 0 0 0 2px var(--ring); }
+        .fade-in { animation: fadeIn 0.5s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--muted-foreground); border-radius: 4px; border: 2px solid var(--background); }
+        ::-webkit-scrollbar-thumb:hover { background: #555; }
+
+        @media print {
+            body > *:not(#printable-area) {
+                display: none;
+            }
+            #printable-area, #printable-area * {
+                visibility: visible;
+            }
+            #printable-area {
+                display: block !important;
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body class="antialiased">
+    <!-- Login Screen -->
+    <div id="login-screen" class="fixed inset-0 bg-secondary flex items-center justify-center z-[100]">
+        <div class="w-full max-w-sm bg-card p-8 rounded-xl shadow-lg border border-border">
+            <h2 class="text-2xl font-bold text-center text-card-foreground mb-2">Namo Tandoori Chai Admin</h2>
+            <p class="text-center text-muted-foreground mb-6">Welcome back. Please sign in.</p>
+            <form id="login-form">
+                <div class="space-y-4">
+                    <div>
+                        <label for="email" class="text-sm font-medium text-muted-foreground">Email</label>
+                        <input type="email" id="email" class="w-full mt-1 p-2 bg-secondary rounded-md border border-border focus:ring-2 focus:ring-ring" required>
+                    </div>
+                    <div>
+                        <label for="password" class="text-sm font-medium text-muted-foreground">Password</label>
+                        <input type="password" id="password" class="w-full mt-1 p-2 bg-secondary rounded-md border border-border focus:ring-2 focus:ring-ring" required>
+                    </div>
+                </div>
+                <p id="login-error" class="text-destructive text-sm text-center mt-4 h-5"></p>
+                <button type="submit" class="w-full bg-primary text-primary-foreground font-semibold py-2.5 px-4 rounded-lg mt-4 transition-transform transform hover:scale-105">Sign In</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main App Container -->
+    <div id="app-container" class="hidden">
+        <div class="relative flex h-screen bg-background">
+            <!-- Sidebar -->
+            <aside id="sidebar" class="w-64 flex-shrink-0 bg-card border-r border-border flex-col fixed inset-y-0 left-0 z-30 transform -translate-x-full lg:translate-x-0 lg:flex transition-transform duration-300 ease-in-out">
+                <div class="h-16 flex items-center justify-center p-4 border-b border-border flex-shrink-0"><h1 class="text-xl font-bold">Namo Tandoori Chai</h1></div>
+                <nav id="sidebar-nav" class="flex-grow p-4 space-y-1 overflow-y-auto"></nav>
+                <div class="p-4 border-t border-border space-y-2">
+                    <button id="theme-toggle" class="w-full flex items-center justify-center p-2 rounded-lg bg-secondary text-secondary-foreground hover:bg-muted transition-colors">
+                        <svg id="theme-icon-light" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+                        <svg id="theme-icon-dark" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>
+                    </button>
+                    <button id="logout-btn" class="w-full flex items-center px-4 py-2 text-sm font-medium rounded-lg text-muted-foreground hover:bg-secondary hover:text-secondary-foreground transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+                        Logout
+                    </button>
+                </div>
+            </aside>
+            <div id="sidebar-overlay" class="hidden fixed inset-0 bg-black bg-opacity-50 z-20 lg:hidden"></div>
+            
+            <!-- Main Content -->
+            <div class="flex-1 flex flex-col overflow-hidden lg:ml-64">
+                <header class="h-16 bg-card border-b border-border flex items-center justify-between px-6 flex-shrink-0">
+                    <div class="flex items-center">
+                         <button id="menu-toggle-btn" class="lg:hidden mr-4 p-2 rounded-md hover:bg-secondary">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
+                        </button>
+                        <h2 id="page-title" class="text-xl font-semibold text-card-foreground">Dashboard</h2>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                        <div id="user-email" class="text-sm text-muted-foreground"></div>
+                    </div>
+                </header>
+                <main id="page-content" class="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6"></main>
+            </div>
+        </div>
+    </div>
+    
+    <div id="toast" class="hidden fixed bottom-5 right-5 bg-primary text-primary-foreground py-2 px-4 rounded-lg shadow-lg text-sm z-[200]"><p id="toast-message"></p></div>
+    
+    <div id="confirm-modal" class="hidden fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[102]">
+        <div class="bg-card rounded-lg shadow-xl p-6 w-full max-w-sm">
+            <h3 id="confirm-title" class="text-lg font-semibold mb-2">Are you sure?</h3>
+            <p id="confirm-message" class="text-sm text-muted-foreground mb-6">This action cannot be undone.</p>
+            <div class="flex justify-end space-x-2">
+                <button id="confirm-cancel-btn" class="bg-secondary text-secondary-foreground px-4 py-2 rounded-lg text-sm">Cancel</button>
+                <button id="confirm-ok-btn" class="bg-destructive text-destructive-foreground px-4 py-2 rounded-lg text-sm">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="alert-modal" class="hidden fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-[101]">
+        <div id="alert-modal-content" class="bg-card p-8 rounded-lg shadow-2xl text-center w-full max-w-md transform transition-all"></div>
+    </div>
+    
+    <div id="printable-area" class="hidden"></div>
+    <audio id="notification-sound" src="https://ttdnlatylcqrevzlyrru.supabase.co/storage/v1/object/public/assets/notification-sound-effect-372475.mp3" preload="auto"></audio>
+
+
+<script>
+// =================================================================================
+//  SECTION: PAGE RENDERERS
+// =================================================================================
+
+async function renderDashboard(container) {
+    container.innerHTML = `
+        <div id="audio-prompt" class="bg-yellow-100 dark:bg-yellow-900/50 border-l-4 border-yellow-500 text-yellow-700 dark:text-yellow-300 p-4 mb-6 rounded-r-lg" role="alert">
+             <div class="flex">
+                <div class="py-1"><svg class="fill-current h-6 w-6 text-yellow-500 mr-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M2.93 17.07A10 10 0 1 1 17.07 2.93 10 10 0 0 1 2.93 17.07zM9 11v4h2v-4H9zm0-4h2v2H9V7z"/></svg></div>
+                <div>
+                  <p class="font-bold">Enable Sound Notifications</p>
+                  <p class="text-sm">Click anywhere on the page to enable sound for new orders and staff calls.</p>
+                </div>
+            </div>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+            <div class="bg-card p-5 rounded-lg border border-border shadow-sm"><h4 class="text-sm font-medium text-muted-foreground">Today's Revenue</h4><p id="db-revenue" class="text-2xl font-bold">₹0.00</p></div>
+            <div class="bg-card p-5 rounded-lg border border-border shadow-sm"><h4 class="text-sm font-medium text-muted-foreground">Today's Orders</h4><p id="db-orders" class="text-2xl font-bold">0</p></div>
+            <div class="bg-card p-5 rounded-lg border border-border shadow-sm"><h4 class="text-sm font-medium text-muted-foreground">Pending Orders</h4><p id="db-pending-orders" class="text-2xl font-bold">0</p></div>
+            <div class="bg-card p-5 rounded-lg border border-border shadow-sm"><h4 class="text-sm font-medium text-muted-foreground">Pending Calls</h4><p id="db-pending-calls" class="text-2xl font-bold">0</p></div>
+        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="bg-card p-5 rounded-lg border border-border shadow-sm">
+                <h3 class="font-semibold mb-4">Live Orders</h3>
+                <div id="live-orders-container" class="space-y-3 max-h-96 overflow-y-auto"></div>
+            </div>
+            <div class="bg-card p-5 rounded-lg border border-border shadow-sm">
+                <h3 class="font-semibold mb-4">Pending Staff Calls</h3>
+                <div id="live-staff-calls-container" class="space-y-3 max-h-96 overflow-y-auto"></div>
+            </div>
+        </div>
+    `;
+
+    if (state.audioInitialized) {
+        const audioPrompt = $('#audio-prompt');
+        if (audioPrompt) audioPrompt.style.display = 'none';
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const { data: orders, error: ordersError } = await supabase.from('orders').select('total_amount, status').gte('created_at', today.toISOString());
+    const { count, error: callsError } = await supabase.from('staff_calls').select('*', { count: 'exact', head: true }).eq('status', 'pending');
+    
+    if (!ordersError) {
+        const totalRevenue = orders.reduce((sum, order) => sum + order.total_amount, 0);
+        const pendingOrders = orders.filter(o => o.status === 'received' || o.status === 'preparing').length;
+        $('#db-revenue').textContent = `₹${totalRevenue.toFixed(2)}`;
+        $('#db-orders').textContent = orders.length;
+        $('#db-pending-orders').textContent = pendingOrders;
+    }
+    if (!callsError) {
+        $('#db-pending-calls').textContent = count;
+    }
+    
+    loadLiveOrders();
+    loadLiveStaffCalls();
+}
+
+async function loadLiveOrders() {
+    const { data, error } = await supabase.from('orders').select('*, tables(table_number)').in('status', ['received', 'preparing']).order('created_at', { ascending: true });
+    
+    const container = $('#live-orders-container');
+    if (!container) return;
+    
+    if (error) {
+        container.innerHTML = `<p class="text-destructive">Error: ${error.message}</p>`;
+        return;
+    }
+
+    if (data.length === 0) {
+        container.innerHTML = `<div class="text-center text-muted-foreground p-4"><p>No new orders waiting.</p></div>`;
+    } else {
+        container.innerHTML = data.map(order => `
+            <div class="bg-secondary p-3 rounded-lg">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <p class="font-semibold">Order #${order.id.slice(0, 6)} <span class="text-xs font-normal text-muted-foreground ml-2">Table #${order.tables?.table_number || 'N/A'}</span></p>
+                        <p class="text-xs text-muted-foreground">${new Date(order.created_at).toLocaleTimeString()}</p>
+                    </div>
+                    <span class="px-2 py-1 text-xs rounded-full ${order.status === 'received' ? 'bg-blue-200 text-blue-800' : 'bg-yellow-200 text-yellow-800'}">${order.status}</span>
+                </div>
+            </div>
+        `).join('');
+    }
+}
+
+async function loadLiveStaffCalls() {
+    const { data, error } = await supabase.from('staff_calls').select('*, tables(table_number)').eq('status', 'pending').order('created_at', { ascending: true });
+    
+    const container = $('#live-staff-calls-container');
+    if (!container) return;
+    
+    if (error) {
+        container.innerHTML = `<p class="text-destructive">Error: ${error.message}</p>`;
+        return;
+    }
+
+    if (data.length === 0) {
+        container.innerHTML = `<div class="text-center text-muted-foreground p-4"><p>No pending staff calls.</p></div>`;
+    } else {
+        container.innerHTML = data.map(call => `
+            <div class="bg-secondary p-3 rounded-lg">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <p class="font-semibold">Call from Table #${call.tables?.table_number || 'N/A'}</p>
+                        <p class="text-xs text-muted-foreground">${new Date(call.created_at).toLocaleTimeString()}</p>
+                    </div>
+                    <button onclick="resolveCall('${call.id}')" class="bg-primary text-primary-foreground px-3 py-1 text-xs font-bold rounded-md hover:opacity-80 transition-opacity">Resolve</button>
+                </div>
+            </div>
+        `).join('');
+    }
+}
+
+async function renderTakeOrder(container) {
+    container.innerHTML = `
+        <div id="table-selection-view" class="max-w-4xl mx-auto text-center">
+            <h3 class="text-2xl font-semibold mb-6">Select a Table</h3>
+            <div id="table-grid" class="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-8 gap-4"></div>
+        </div>
+        <div id="pos-view" class="hidden h-full"></div>
+    `;
+
+    const { data: tables, error } = await supabase.from('tables').select('*').order('table_number');
+    if (error) {
+        $('#table-grid').innerHTML = `<p class="text-destructive col-span-full">Error fetching tables.</p>`;
+        return;
+    }
+
+    const tableGrid = $('#table-grid');
+    tableGrid.innerHTML = tables.map(table => `
+        <button data-table-number="${table.table_number}" class="table-select-btn aspect-square flex items-center justify-center bg-card border border-border rounded-lg text-xl font-bold hover:bg-secondary transition-colors">${table.table_number}</button>
+    `).join('');
+
+    $$('.table-select-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const tableNumber = btn.dataset.tableNumber;
+            $('#table-selection-view').classList.add('hidden');
+            $('#pos-view').classList.remove('hidden');
+            renderPosForTable(tableNumber);
+        });
+    });
+}
+
+async function renderPosForTable(tableNumber) {
+    const posContainer = $('#pos-view');
+    posContainer.innerHTML = `
+        <div class="flex flex-col lg:flex-row gap-4 h-full">
+            <!-- Categories & Menu Items -->
+            <div class="lg:w-7/12 flex flex-col h-full bg-card border border-border rounded-lg p-4">
+                <div class="flex items-center justify-between mb-4">
+                    <button id="change-table-btn" class="text-sm font-medium hover:underline">&larr; Change Table</button>
+                    <input type="text" id="search-menu-input" placeholder="Search menu..." class="w-1/2 p-2 bg-secondary rounded-md border border-border text-sm">
+                </div>
+                <!-- Scrollable Categories -->
+                <div id="category-tabs-container" class="mb-4 flex overflow-x-auto pb-2 space-x-2 whitespace-nowrap"></div>
+                <div id="menu-items-grid" class="flex-grow grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 overflow-y-auto"></div>
+            </div>
+            <!-- Cart -->
+            <div class="lg:w-5/12 flex flex-col h-full bg-card border border-border rounded-lg p-4">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-bold">Table #${tableNumber}</h3>
+                    <button id="clear-cart-btn" class="text-sm text-red-500 hover:underline">Clear Cart</button>
+                </div>
+                <div id="cart-items" class="flex-grow space-y-2 overflow-y-auto">
+                    <p class="text-muted-foreground text-center pt-8">No items added yet.</p>
+                </div>
+                <div class="pt-4 border-t border-border">
+                    <textarea id="special-instructions" placeholder="Special Instructions..." class="w-full p-2 bg-secondary rounded-md border border-border text-sm mb-4" rows="2"></textarea>
+                    <div class="space-y-1 text-sm mb-4">
+                        <div class="flex justify-between"><p>Subtotal</p><p id="cart-subtotal">₹0.00</p></div>
+                        <div class="flex justify-between"><p>GST (5%)</p><p id="cart-gst">₹0.00</p></div>
+                        <div class="flex justify-between font-bold text-base"><p>Total</p><p id="cart-total">₹0.00</p></div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button id="save-kot-btn" class="w-full bg-blue-600 text-white font-semibold py-3 px-4 rounded-lg transition-opacity hover:opacity-80 disabled:opacity-50" disabled>Save & KOT</button>
+                        <button id="print-bill-btn" class="w-full bg-green-600 text-white font-semibold py-3 px-4 rounded-lg transition-opacity hover:opacity-80 disabled:opacity-50" disabled>Print Bill</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    $('#change-table-btn').addEventListener('click', () => navigateTo('take_order'));
+
+    const cart = [];
+    let menuItems = [];
+
+    const updateCartView = () => {
+        const cartItemsContainer = $('#cart-items');
+        const saveKotBtn = $('#save-kot-btn');
+        const printBillBtn = $('#print-bill-btn');
+
+        if (cart.length === 0) {
+            cartItemsContainer.innerHTML = `<p class="text-muted-foreground text-center pt-8">No items added yet.</p>`;
+            saveKotBtn.disabled = true;
+            printBillBtn.disabled = true;
+        } else {
+            cartItemsContainer.innerHTML = cart.map((item, index) => `
+                <div class="flex items-center bg-secondary p-2 rounded-md">
+                    <div class="flex-grow">
+                        <p class="text-sm font-medium">${item.name}</p>
+                        <p class="text-xs text-muted-foreground">₹${item.price.toFixed(2)}</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button class="cart-qty-btn" data-index="${index}" data-change="-1">-</button>
+                        <span class="font-medium text-sm">${item.quantity}</span>
+                        <button class="cart-qty-btn" data-index="${index}" data-change="1">+</button>
+                    </div>
+                </div>
+            `).join('');
+            saveKotBtn.disabled = false;
+            printBillBtn.disabled = false;
+        }
+
+        const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+        const gst = subtotal * 0.05;
+        const total = subtotal + gst;
+
+        $('#cart-subtotal').textContent = `₹${subtotal.toFixed(2)}`;
+        $('#cart-gst').textContent = `₹${gst.toFixed(2)}`;
+        $('#cart-total').textContent = `₹${total.toFixed(2)}`;
+    };
+    
+    const loadAndRenderMenu = async (filter = '', category = 'All') => {
+        let query = supabase.from('products').select('*').eq('is_available', true);
+        if (filter) {
+            query = query.ilike('name', `%${filter}%`);
+        }
+        if (category !== 'All') {
+            query = query.eq('category', category);
+        }
+        const { data, error } = await query;
+        
+        if(error){ console.error(error); return; }
+        menuItems = data;
+
+        const menuGrid = $('#menu-items-grid');
+        menuGrid.innerHTML = menuItems.map(item => `
+            <button class="add-to-cart-btn text-left p-2 bg-secondary rounded-lg border border-transparent hover:border-border transition-all" data-id="${item.id}">
+                <p class="font-semibold text-sm">${item.name}</p>
+                <p class="text-xs text-muted-foreground">₹${item.price}</p>
+            </button>
+        `).join('');
+    };
+    
+    const loadCategories = async () => {
+        const { data, error } = await supabase.from('products').select('category');
+        if (error) return;
+        
+        const uniqueCategories = ['All', ...new Set(data.map(p => p.category))];
+        const tabsContainer = $('#category-tabs-container');
+        tabsContainer.innerHTML = uniqueCategories.map(cat => `
+            <button class="category-tab-btn flex-shrink-0 px-4 py-2 text-sm font-medium rounded-full ${cat === 'All' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-secondary-foreground'}">${cat}</button>
+        `).join('');
+        
+        $$('.category-tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                $$('.category-tab-btn').forEach(b => b.classList.remove('bg-primary', 'text-primary-foreground'));
+                $$('.category-tab-btn').forEach(b => b.classList.add('bg-secondary', 'text-secondary-foreground'));
+                btn.classList.add('bg-primary', 'text-primary-foreground');
+                btn.classList.remove('bg-secondary', 'text-secondary-foreground');
+                loadAndRenderMenu($('#search-menu-input').value, btn.textContent);
+            });
+        });
+    };
+
+    posContainer.addEventListener('click', e => {
+        if (e.target.closest('.add-to-cart-btn')) {
+            const btn = e.target.closest('.add-to-cart-btn');
+            const productId = parseInt(btn.dataset.id);
+            const product = menuItems.find(p => p.id === productId);
+            
+            const existingItem = cart.find(item => item.id === productId);
+            if (existingItem) {
+                existingItem.quantity++;
+            } else {
+                cart.push({ ...product, quantity: 1 });
+            }
+            updateCartView();
+        }
+        
+        if (e.target.classList.contains('cart-qty-btn')) {
+            const index = parseInt(e.target.dataset.index);
+            const change = parseInt(e.target.dataset.change);
+            cart[index].quantity += change;
+            if (cart[index].quantity <= 0) {
+                cart.splice(index, 1);
+            }
+            updateCartView();
+        }
+    });
+    
+    $('#clear-cart-btn').addEventListener('click', () => {
+        cart.length = 0;
+        updateCartView();
+    });
+    
+    $('#search-menu-input').addEventListener('input', e => {
+        const activeCategory = $('.category-tab-btn.bg-primary')?.textContent || 'All';
+        loadAndRenderMenu(e.target.value, activeCategory);
+    });
+
+    $('#save-kot-btn').addEventListener('click', async () => {
+        const btn = $('#save-kot-btn');
+        btn.disabled = true;
+        btn.textContent = 'Saving...';
+        
+        const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+        const total = subtotal * 1.05;
+
+        const orderData = {
+            table_number_input: parseInt(tableNumber),
+            special_instructions_input: $('#special-instructions').value,
+            total_amount_input: total,
+            source_input: 'Staff',
+            order_items: cart.map(item => ({
+                product_id: item.id,
+                quantity: item.quantity,
+                price_at_time_of_order: item.price
+            }))
+        };
+        
+        const { data: orderResult, error } = await supabase.rpc('create_order_with_items', orderData);
+
+        if (error) {
+            showToast(`Error placing order: ${error.message}`, true);
+            console.error("Place Order Error:", error);
+            btn.textContent = 'Save & KOT';
+            btn.disabled = false;
+        } else {
+            showToast('Order placed successfully!');
+            const newOrderId = orderResult;
+            printKOT(cart, tableNumber, $('#special-instructions').value, newOrderId);
+            cart.length = 0;
+            updateCartView();
+            navigateTo('take_order');
+        }
+    });
+    
+    $('#print-bill-btn').addEventListener('click', async () => {
+        printBill(cart, tableNumber);
+    });
+    
+    await loadCategories();
+    await loadAndRenderMenu();
+    updateCartView();
+}
+
+
+async function renderMenu(container) {
+    container.innerHTML = `
+        <div class="flex flex-col sm:flex-row justify-between items-center mb-4 gap-2">
+            <h3 class="text-lg font-semibold">Menu Items</h3>
+            <div class="flex space-x-2">
+                <button id="import-pdf-btn" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium">Import from PDF</button>
+                <button id="add-item-btn" class="bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm font-medium">Add New Item</button>
+            </div>
+        </div>
+        <input type="file" id="pdf-upload-input" class="hidden" accept="application/pdf">
+        <div id="menu-items-container" class="space-y-6"></div>
+        
+        <!-- Add/Edit Item Modal -->
+        <div id="menu-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div class="bg-card rounded-lg shadow-xl p-6 w-full max-w-md">
+                <h3 id="modal-title" class="text-lg font-semibold mb-4">Add Menu Item</h3>
+                <form id="menu-item-form" class="space-y-4">
+                    <input type="hidden" id="item-id">
+                    <div>
+                        <label class="text-sm font-medium">Name</label>
+                        <input type="text" id="item-name" class="w-full mt-1 p-2 bg-secondary rounded-md border border-border" required>
+                    </div>
+                    <div>
+                        <label class="text-sm font-medium">Emoji</label>
+                        <input type="text" id="item-emoji" placeholder="e.g., 🍔" class="w-full mt-1 p-2 bg-secondary rounded-md border border-border">
+                    </div>
+                    <div>
+                        <label class="text-sm font-medium">Category</label>
+                        <input type="text" id="item-category" class="w-full mt-1 p-2 bg-secondary rounded-md border border-border" required>
+                    </div>
+                    <div>
+                        <label class="text-sm font-medium">Price</label>
+                        <input type="number" id="item-price" step="0.01" class="w-full mt-1 p-2 bg-secondary rounded-md border border-border" required>
+                    </div>
+                     <div>
+                        <label class="text-sm font-medium">Description</label>
+                        <textarea id="item-description" class="w-full mt-1 p-2 bg-secondary rounded-md border border-border" rows="2"></textarea>
+                    </div>
+                    <div class="flex items-center">
+                        <input type="checkbox" id="item-available" class="h-4 w-4 rounded border-gray-300">
+                        <label for="item-available" class="ml-2 text-sm font-medium">Is Available</label>
+                    </div>
+                    <div class="flex justify-end space-x-2 pt-4">
+                        <button type="button" id="cancel-btn" class="bg-secondary text-secondary-foreground px-4 py-2 rounded-lg text-sm">Cancel</button>
+                        <button type="submit" id="save-item-btn" class="bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm">Save</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- PDF Import Modal -->
+        <div id="pdf-import-modal" class="hidden fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
+            <div class="bg-card rounded-lg shadow-xl p-6 w-full max-w-2xl">
+                <h3 class="text-lg font-semibold mb-4">Import Menu from PDF</h3>
+                <div id="pdf-import-content" class="max-h-96 overflow-y-auto">
+                    <!-- Content will be dynamically populated -->
+                </div>
+                <div class="flex justify-end space-x-2 pt-4">
+                    <button type="button" id="cancel-pdf-import-btn" class="bg-secondary text-secondary-foreground px-4 py-2 rounded-lg text-sm">Cancel</button>
+                    <button type="button" id="add-selected-items-btn" class="bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm hidden">Add Selected Items</button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    const loadMenu = async () => {
+        const { data: products, error } = await supabase.from('products').select('*').order('category').order('name');
+        
+        if (state.currentPage !== 'menu') return;
+        const menuContainer = $('#menu-items-container');
+
+        if (error) {
+            showToast(`Failed to load menu: ${error.message}`, true);
+            menuContainer.innerHTML = `<p class="text-center text-destructive p-4">Error: ${error.message}</p>`;
+            return;
+        }
+
+        const groupedByCategory = products.reduce((acc, product) => {
+            const category = product.category || 'Uncategorized';
+            if (!acc[category]) {
+                acc[category] = [];
+            }
+            acc[category].push(product);
+            return acc;
+        }, {});
+
+        menuContainer.innerHTML = Object.keys(groupedByCategory).sort().map(category => `
+            <div class="bg-card rounded-lg shadow-sm border border-border overflow-hidden">
+                <h4 class="text-md font-semibold p-4 bg-secondary border-b border-border">${category}</h4>
+                <div class="divide-y divide-border">
+                ${groupedByCategory[category].map(item => `
+                    <div class="p-4 text-sm">
+                        <div class="flex justify-between items-start">
+                           <div class="font-medium">${item.image_url || ''} ${item.name}</div>
+                           <div class="flex items-center gap-4">
+                                <div class="text-muted-foreground">₹${item.price}</div>
+                                <div><span class="px-2 py-1 text-xs rounded-full ${item.is_available ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">${item.is_available ? 'Yes' : 'No'}</span></div>
+                                <div class="space-x-2">
+                                    <button class="edit-item-btn text-blue-600 hover:underline" data-id="${item.id}">Edit</button>
+                                    <button class="delete-item-btn text-red-600 hover:underline" data-id="${item.id}">Delete</button>
+                                </div>
+                           </div>
+                        </div>
+                    </div>
+                `).join('')}
+                </div>
+            </div>
+        `).join('');
+    };
+
+    const openModal = (item = null) => {
+        $('#menu-modal').classList.remove('hidden');
+        $('#modal-title').textContent = item ? 'Edit Menu Item' : 'Add Menu Item';
+        $('#item-id').value = item?.id || '';
+        $('#item-name').value = item?.name || '';
+        $('#item-emoji').value = item?.image_url || '';
+        $('#item-category').value = item?.category || '';
+        $('#item-price').value = item?.price || '';
+        $('#item-description').value = item?.description || '';
+        $('#item-available').checked = item ? item.is_available : true;
+    };
+
+    const closeModal = () => $('#menu-modal').classList.add('hidden');
+    
+    await loadMenu();
+
+    $('#add-item-btn').addEventListener('click', () => openModal());
+    $('#cancel-btn').addEventListener('click', closeModal);
+    
+    $('#import-pdf-btn').addEventListener('click', () => $('#pdf-upload-input').click());
+    $('#pdf-upload-input').addEventListener('change', handlePdfUpload);
+    $('#cancel-pdf-import-btn').addEventListener('click', () => {
+        $('#pdf-import-modal').classList.add('hidden');
+        $('#pdf-upload-input').value = ''; 
+    });
+    
+    $('#add-selected-items-btn').addEventListener('click', async () => {
+        const btn = $('#add-selected-items-btn');
+        btn.disabled = true;
+        btn.textContent = 'Adding...';
+
+        const selectedItems = [];
+        $$('#pdf-import-content input[type="checkbox"]:checked').forEach(checkbox => {
+            selectedItems.push({
+                name: checkbox.dataset.name,
+                price: parseFloat(checkbox.dataset.price),
+                category: 'Imported from PDF',
+                is_available: true,
+            });
+        });
+
+        if (selectedItems.length === 0) {
+            showToast('No items selected.', true);
+            btn.disabled = false;
+            btn.textContent = 'Add Selected Items';
+            return;
+        }
+
+        const { error } = await supabase.from('products').insert(selectedItems);
+
+        if (error) {
+            showToast(`Error adding items: ${error.message}`, true);
+        } else {
+            showToast(`${selectedItems.length} items added successfully.`);
+            $('#pdf-import-modal').classList.add('hidden');
+            $('#pdf-upload-input').value = '';
+            loadMenu();
+        }
+
+        btn.disabled = false;
+        btn.textContent = 'Add Selected Items';
+    });
+
+
+    $('#menu-item-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const saveBtn = $('#save-item-btn');
+        saveBtn.disabled = true;
+        saveBtn.textContent = 'Saving...';
+        
+        const id = $('#item-id').value;
+        const itemData = {
+            name: $('#item-name').value,
+            image_url: $('#item-emoji').value,
+            category: $('#item-category').value,
+            price: parseFloat($('#item-price').value),
+            description: $('#item-description').value,
+            is_available: $('#item-available').checked,
+        };
+
+        const { error } = id
+            ? await supabase.from('products').update(itemData).eq('id', id)
+            : await supabase.from('products').insert([itemData]);
+        
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Save';
+
+        if (error) {
+            showToast(`Error saving item: ${error.message}`, true);
+        } else {
+            showToast(`Item ${id ? 'updated' : 'added'}.`);
+            closeModal();
+            loadMenu();
+        }
+    });
+
+    container.addEventListener('click', async (e) => {
+        if (e.target.classList.contains('edit-item-btn')) {
+            const { data } = await supabase.from('products').select('*').eq('id', e.target.dataset.id).single();
+            openModal(data);
+        }
+        if (e.target.classList.contains('delete-item-btn')) {
+            const confirmed = await showConfirmation('Delete Item?', 'This will permanently delete this menu item.');
+            if (confirmed) {
+                const { error } = await supabase.from('products').delete().eq('id', e.target.dataset.id);
+                if (error) showToast(`Error: ${error.message}`, true);
+                else {
+                    showToast('Item deleted.');
+                    loadMenu();
+                }
+            }
+        }
+    });
+}
+
+
+async function renderOrders(container) {
+    container.innerHTML = `
+        <div class="bg-card p-4 rounded-lg shadow-sm border border-border overflow-x-auto">
+             <div class="min-w-full">
+                <div class="grid grid-cols-7 gap-4 font-semibold text-sm text-muted-foreground px-4 py-2 border-b border-border" style="min-width: 800px;">
+                    <div>Order ID</div>
+                    <div>Customer</div>
+                    <div>Table</div>
+                    <div>Total</div>
+                    <div>Status</div>
+                    <div>Source</div>
+                    <div>Actions</div>
+                </div>
+                <div id="orders-table-body" class="divide-y divide-border" style="min-width: 800px;"></div>
+             </div>
+        </div>
+        <div id="order-detail-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"></div>
+    `;
+
+    const loadOrders = async () => {
+        const { data, error } = await supabase.from('orders').select('*, customers(name), tables(table_number)').order('created_at', { ascending: false }).limit(100);
+        
+        const tableBody = $('#orders-table-body');
+        if (!tableBody) return;
+
+        if (error) {
+            tableBody.innerHTML = `<p class="text-destructive p-4">Error: ${error.message}</p>`;
+            return;
+        }
+
+        tableBody.innerHTML = data.length === 0
+            ? `<p class="text-muted-foreground p-4 text-center">No order history found.</p>`
+            : data.map(order => `
+                <div class="grid grid-cols-7 gap-4 items-center px-4 py-3 text-sm">
+                    <div class="font-mono text-xs">${order.id.slice(0, 8)}...</div>
+                    <div class="truncate">${order.customers?.name || 'N/A'}</div>
+                    <div>#${order.tables?.table_number || 'N/A'}</div>
+                    <div class="font-semibold">₹${order.total_amount.toFixed(2)}</div>
+                    <div>
+                        <select class="status-select w-full bg-secondary border-border rounded-md p-1 text-xs" data-id="${order.id}">
+                            <option value="received" ${order.status === 'received' ? 'selected' : ''}>Received</option>
+                            <option value="preparing" ${order.status === 'preparing' ? 'selected' : ''}>Preparing</option>
+                            <option value="delivered" ${order.status === 'delivered' ? 'selected' : ''}>Delivered</option>
+                            <option value="cancelled" ${order.status === 'cancelled' ? 'selected' : ''}>Cancelled</option>
+                        </select>
+                    </div>
+                    <td>${order.source || 'Customer'}</td>
+                    <div>
+                        <button class="view-order-btn text-blue-600 hover:underline" data-id="${order.id}">View</button>
+                    </div>
+                </div>
+            `).join('');
+    };
+
+    await loadOrders();
+
+    container.addEventListener('change', async (e) => {
+        if (e.target.classList.contains('status-select')) {
+            const { error } = await supabase.from('orders').update({status: e.target.value}).eq('id', e.target.dataset.id);
+            if (error) showToast(`Error: ${error.message}`, true);
+        }
+    });
+
+    container.addEventListener('click', async (e) => {
+        if (e.target.classList.contains('view-order-btn')) {
+            const { data: order, error } = await supabase.from('orders').select('*, tables(table_number), order_items(*, products(*))').eq('id', e.target.dataset.id).single();
+            if(error) { showToast('Could not fetch order details', true); return; }
+            
+            const modal = $('#order-detail-modal');
+            modal.innerHTML = `
+                <div class="bg-card rounded-lg shadow-xl p-6 w-full max-w-lg relative">
+                    <button onclick="$('#order-detail-modal').classList.add('hidden')" class="absolute top-3 right-3 text-muted-foreground text-2xl">&times;</button>
+                    <h3 class="text-lg font-semibold mb-4">Order Details (${order.id.slice(0, 8)})</h3>
+                    <div class="text-sm space-y-2 mb-4">
+                        <p><strong>Table:</strong> #${order.tables?.table_number || 'N/A'}</p>
+                        <p><strong>Instructions:</strong> ${order.special_instructions || 'None'}</p>
+                    </div>
+                    <div class="border rounded-lg max-h-64 overflow-y-auto">
+                        ${order.order_items.map(item => `<div class="flex justify-between p-2 border-b"><p>${item.quantity} x ${item.products?.name || '[Deleted]'}</p><p>₹${(item.price_at_time_of_order * item.quantity).toFixed(2)}</p></div>`).join('')}
+                    </div>
+                    <div class="flex justify-between p-2 font-bold mt-2"><p>Total</p><p>₹${order.total_amount.toFixed(2)}</p></div>
+                    <div class="flex justify-end space-x-2 mt-4">
+                        <button class="print-kot-modal-btn bg-blue-600 text-white px-4 py-2 text-sm rounded-lg">Print KOT</button>
+                        <button class="print-bill-modal-btn bg-green-600 text-white px-4 py-2 text-sm rounded-lg">Print Bill</button>
+                    </div>
+                </div>
+            `;
+            modal.querySelector('.print-kot-modal-btn').onclick = () => printKOT(order.order_items.map(oi => ({name: oi.products.name, quantity: oi.quantity})), order.tables.table_number, order.special_instructions, order.id);
+            modal.querySelector('.print-bill-modal-btn').onclick = () => printBill(order.order_items.map(oi => ({name: oi.products.name, price: oi.price_at_time_of_order, quantity: oi.quantity})), order.tables.table_number, order.id);
+            modal.classList.remove('hidden');
+        }
+    });
+}
+
+async function renderStaffCalls(container) {
+    container.innerHTML = `
+        <div class="bg-card p-4 rounded-lg shadow-sm border border-border">
+            <div id="staff-calls-table-body" class="divide-y divide-border"></div>
+        </div>
+    `;
+    
+    const loadCalls = async () => {
+        const { data, error } = await supabase.from('staff_calls').select('*, tables(table_number)').order('created_at', { ascending: false });
+
+        const tableBody = $('#staff-calls-table-body');
+        if (!tableBody) return;
+
+        if (error) {
+            tableBody.innerHTML = `<p class="text-destructive p-4">Error: ${error.message}</p>`;
+            return;
+        }
+        
+        tableBody.innerHTML = data.length === 0
+            ? `<p class="text-muted-foreground p-4 text-center">No staff calls found.</p>`
+            : data.map(call => `
+                <div class="flex items-center justify-between p-3 text-sm">
+                   <div>
+                        <p><strong>Call from Table #${call.tables?.table_number || 'N/A'}</strong></p>
+                        <p class="text-xs text-muted-foreground">${new Date(call.created_at).toLocaleString()}</p>
+                   </div>
+                   <div class="flex items-center gap-4">
+                        <span class="px-2 py-1 text-xs rounded-full ${call.status === 'pending' ? 'bg-orange-100 text-orange-800' : 'bg-green-100 text-green-800'}">${call.status}</span>
+                        ${call.status === 'pending' ? `<button onclick="resolveCall('${call.id}')" class="text-blue-600 hover:underline text-xs">Resolve</button>` : ''}
+                   </div>
+                </div>
+            `).join('');
+    };
+    
+    await loadCalls();
+}
+
+async function resolveCall(callId) {
+    const { error } = await supabase.from('staff_calls').update({ status: 'resolved' }).eq('id', callId);
+    if (error) showToast(`Error: ${error.message}`, true);
+}
+
+async function renderCustomers(container) {
+    container.innerHTML = `
+        <div class="bg-card p-4 rounded-lg shadow-sm border border-border">
+            <div class="grid grid-cols-4 gap-4 font-semibold text-sm text-muted-foreground px-4 py-2 border-b border-border">
+                <div class="col-span-2">Name</div>
+                <div>Phone</div>
+                <div>Actions</div>
+            </div>
+            <div id="customers-table-body" class="divide-y divide-border"></div>
+        </div>
+    `;
+
+    const loadCustomers = async () => {
+        const { data, error } = await supabase.from('customers').select('*').order('created_at', { ascending: false });
+        const tableBody = $('#customers-table-body');
+        if (!tableBody) return;
+
+        if (error) {
+            tableBody.innerHTML = `<p class="text-destructive p-4 text-center">Error: ${error.message}</p>`;
+            return;
+        }
+        
+        tableBody.innerHTML = data.length === 0 
+            ? `<p class="text-muted-foreground p-4 text-center">No customers found.</p>`
+            : data.map(customer => `
+                <div class="grid grid-cols-4 gap-4 items-center px-4 py-3 text-sm">
+                    <div class="col-span-2 font-medium">${customer.name || 'N/A'}</div>
+                    <div>${customer.whatsapp_number || 'N/A'}</div>
+                    <div>
+                        <button class="delete-customer-btn text-red-600 hover:underline" data-id="${customer.id}" data-name="${customer.name}">Delete</button>
+                    </div>
+                </div>
+            `).join('');
+    };
+
+    await loadCustomers();
+    
+    container.addEventListener('click', async (e) => {
+        if (e.target.classList.contains('delete-customer-btn')) {
+            const id = e.target.dataset.id;
+            const name = e.target.dataset.name;
+            const confirmed = await showConfirmation('Delete Customer?', `This will permanently delete ${name} and their data. This action cannot be undone.`);
+            
+            if (confirmed) {
+                // Note: Ensure RLS and cascade deletes are set up in Supabase for this to work safely.
+                const { error } = await supabase.from('customers').delete().eq('id', id);
+                if (error) {
+                    showToast(`Error: ${error.message}`, true);
+                } else {
+                    showToast(`Customer ${name} deleted.`);
+                    loadCustomers();
+                }
+            }
+        }
+    });
+}
+
+async function renderAnalytics(container) {
+    container.innerHTML = `
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="bg-card p-6 rounded-lg shadow-sm border border-border">
+                <h3 class="text-lg font-semibold mb-4">Top 5 Selling Items</h3>
+                <canvas id="topItemsChart"></canvas>
+            </div>
+            <div class="bg-card p-6 rounded-lg shadow-sm border border-border">
+                <h3 class="text-lg font-semibold mb-4">Daily Revenue (Last 30 Days)</h3>
+                 <canvas id="revenueChart"></canvas>
+            </div>
+             <div class="bg-card p-6 rounded-lg shadow-sm border border-border">
+                <h3 class="text-lg font-semibold mb-4">Revenue by Category</h3>
+                 <canvas id="categoryRevenueChart"></canvas>
+            </div>
+             <div class="bg-card p-6 rounded-lg shadow-sm border border-border">
+                <h3 class="text-lg font-semibold mb-4">Peak Order Times</h3>
+                 <canvas id="peakTimesChart"></canvas>
+            </div>
+        </div>
+    `;
+    
+    renderAllCharts();
+}
+
+
+async function renderReports(container) {
+    container.innerHTML = `
+         <div class="max-w-2xl mx-auto bg-card p-8 rounded-lg shadow-sm border border-border">
+            <h3 class="text-lg font-semibold mb-6">Download Sales Reports</h3>
+            <div class="space-y-4">
+                <p class="text-muted-foreground text-sm">Select a date range to download a detailed sales report in CSV format.</p>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <button data-range="today" class="report-btn bg-secondary hover:bg-muted text-secondary-foreground font-medium py-3 rounded-lg">Today</button>
+                    <button data-range="7d" class="report-btn bg-secondary hover:bg-muted text-secondary-foreground font-medium py-3 rounded-lg">Last 7 Days</button>
+                    <button data-range="30d" class="report-btn bg-secondary hover:bg-muted text-secondary-foreground font-medium py-3 rounded-lg">Last 30 Days</button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    $$('.report-btn').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+            const range = e.target.dataset.range;
+            let startDate = new Date();
+            if (range === 'today') startDate.setHours(0, 0, 0, 0);
+            if (range === '7d') startDate.setDate(startDate.getDate() - 7);
+            if (range === '30d') startDate.setDate(startDate.getDate() - 30);
+            
+            showToast('Generating report...');
+
+            const { data, error } = await supabase.from('orders')
+                .select(`id, created_at, total_amount, tables(table_number), order_items(quantity, products(name, category, price))`)
+                .gte('created_at', startDate.toISOString())
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                showToast('Error fetching report data.', true);
+                console.error("Report Error:", error);
+                return;
+            }
+            
+            const escapeCsvField = (field) => {
+                const str = String(field === null || field === undefined ? '' : field);
+                return `"${str.replace(/"/g, '""')}"`;
+            };
+
+            let csvContent = "OrderID,Timestamp,Table,ItemName,Category,Quantity,Price,Total\n";
+            
+            data.forEach(order => {
+                order.order_items.forEach(item => {
+                    const row = [
+                        escapeCsvField(order.id),
+                        escapeCsvField(order.created_at),
+                        escapeCsvField(order.tables?.table_number),
+                        escapeCsvField(item.products?.name),
+                        escapeCsvField(item.products?.category),
+                        escapeCsvField(item.quantity),
+                        escapeCsvField(item.products?.price),
+                        escapeCsvField(item.quantity * (item.products?.price || 0))
+                    ].join(",");
+                    csvContent += row + "\n";
+                });
+            });
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            if (link.download !== undefined) {
+                const url = URL.createObjectURL(blob);
+                link.setAttribute("href", url);
+                link.setAttribute("download", `sales_report_${range}.csv`);
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+        });
+    });
+}
+
+function renderQrCodes(container) {
+    container.innerHTML = `
+        <div class="max-w-md mx-auto bg-card p-8 rounded-lg shadow-sm border border-border">
+            <h3 class="text-lg font-semibold text-center mb-1">Generate Table QR Code</h3>
+            <p class="text-center text-muted-foreground text-sm mb-4">Enter a table number to generate a unique QR code for your customer-facing menu.</p>
+            <div class="flex space-x-2">
+                <input type="number" id="table-number-input" placeholder="Enter table number" class="w-full p-2 bg-secondary rounded-md border border-border">
+                <button id="generate-qr-btn" class="bg-primary text-primary-foreground px-4 py-2 rounded-lg font-medium">Generate</button>
+            </div>
+            <div id="qrcode-container" class="mt-6 flex flex-col items-center justify-center bg-secondary p-4 rounded-lg hidden">
+                <h4 id="qr-title" class="font-semibold mb-2"></h4>
+                <div id="qrcode" class="bg-white p-4 rounded-md"></div>
+                 <button id="print-qr-btn" class="mt-4 bg-blue-500 text-white px-4 py-2 rounded-lg text-sm">Print QR Code</button>
+            </div>
+        </div>
+    `;
+
+    $('#generate-qr-btn').addEventListener('click', () => {
+        const tableNumber = $('#table-number-input').value;
+        if (!tableNumber) {
+            showToast('Please enter a table number.', true);
+            return;
+        }
+        
+        const url = `https://namoshersingh.onrender.com/?table=${tableNumber}`;
+        const qrcodeContainer = $('#qrcode');
+        qrcodeContainer.innerHTML = '';
+        
+        try {
+            const qr = qrcode(0, 'L');
+            qr.addData(url);
+            qr.make();
+            qrcodeContainer.innerHTML = qr.createImgTag(6, 8);
+            
+            $('#qr-title').textContent = `QR Code for Table #${tableNumber}`;
+            $('#qrcode-container').classList.remove('hidden');
+        } catch(e) {
+            showToast('Error generating QR code.', true);
+            console.error(e);
+        }
+    });
+
+    $('#print-qr-btn').addEventListener('click', () => {
+        const qrTitle = $('#qr-title').textContent;
+        const qrImage = $('#qrcode').innerHTML;
+        const printContent = `
+            <div style="text-align: center; font-family: sans-serif; padding-top: 50px;">
+                <h2 style="font-size: 24px; margin-bottom: 20px;">${qrTitle}</h2>
+                ${qrImage.replace('<img', '<img style="width: 200px; height: 200px;"')}
+            </div>
+        `;
+        const printContainer = $('#printable-area');
+        printContainer.innerHTML = printContent;
+        printContainer.classList.remove('hidden');
+        window.print();
+        printContainer.classList.add('hidden');
+    });
+}
+
+
+async function renderSettings(container) {
+    container.innerHTML = `
+        <div class="max-w-2xl mx-auto bg-card p-8 rounded-lg shadow-sm border border-border">
+            <h3 class="text-lg font-semibold mb-6">Application Settings</h3>
+            <form id="settings-form" class="space-y-4">
+                <div id="settings-fields">
+                    <p class="text-muted-foreground">Loading settings...</p>
+                </div>
+                <div class="flex justify-end pt-4">
+                    <button type="submit" class="bg-primary text-primary-foreground px-6 py-2 rounded-lg font-medium">Save Settings</button>
+                </div>
+            </form>
+        </div>
+    `;
+
+    const loadSettings = async () => {
+        const { data, error } = await supabase.from('settings').select('*');
+        const fieldsContainer = $('#settings-fields');
+        if (!fieldsContainer) return;
+
+        if (error) {
+            fieldsContainer.innerHTML = `<p class="text-destructive">Error loading settings: ${error.message}</p>`;
+            return;
+        }
+
+        fieldsContainer.innerHTML = data.map(setting => {
+            const formattedKey = setting.key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+            return `
+                <div>
+                    <label for="setting-${setting.key}" class="text-sm font-medium text-card-foreground">${formattedKey}</label>
+                    <input type="text" id="setting-${setting.key}" name="${setting.key}" value="${setting.value}" class="w-full mt-1 p-2 bg-secondary rounded-md border border-border">
+                </div>
+            `;
+        }).join('');
+    };
+    
+    await loadSettings();
+
+    $('#settings-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const updates = [];
+        for (let [key, value] of formData.entries()) {
+            updates.push({ key, value });
+        }
+
+        // Use onConflict to either insert new settings or update existing ones.
+        const { error } = await supabase.from('settings').upsert(updates, { onConflict: 'key' });
+
+        if (error) {
+            showToast(`Error saving settings: ${error.message}`, true);
+        } else {
+            showToast('Settings saved successfully.');
+        }
+    });
+}
+
+// =================================================================================
+//  SECTION: PDF PARSING LOGIC
+// =================================================================================
+
+async function handlePdfUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const modal = $('#pdf-import-modal');
+    const content = $('#pdf-import-content');
+    const addBtn = $('#add-selected-items-btn');
+    
+    modal.classList.remove('hidden');
+    addBtn.classList.add('hidden');
+    content.innerHTML = `<div class="text-center p-8"><p class="text-muted-foreground">Parsing PDF, please wait...</p></div>`;
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+        const typedarray = new Uint8Array(e.target.result);
+        
+        try {
+            pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js`;
+            
+            const pdf = await pdfjsLib.getDocument(typedarray).promise;
+            let fullText = '';
+
+            for (let i = 1; i <= pdf.numPages; i++) {
+                const page = await pdf.getPage(i);
+                const textContent = await page.getTextContent();
+                fullText += textContent.items.map(item => item.str).join(' ') + '\n';
+            }
+            
+            const menuItems = parseMenuText(fullText);
+            
+            if (menuItems.length > 0) {
+                displayParsedItems(menuItems);
+                addBtn.classList.remove('hidden');
+            } else {
+                content.innerHTML = `<div class="text-center p-8"><p class="text-destructive">Could not find any menu items in the PDF. Please ensure it's a text-based PDF with clear item names and prices.</p></div>`;
+            }
+
+        } catch (error) {
+            console.error('Error parsing PDF:', error);
+            content.innerHTML = `<div class="text-center p-8"><p class="text-destructive">Failed to parse PDF. The file might be corrupted or in an unsupported format.</p></div>`;
+        }
+    };
+    reader.readAsArrayBuffer(file);
+}
+
+function parseMenuText(text) {
+    const items = [];
+    const lines = text.split('\n');
+    const menuItemRegex = /^(.*?)(?:\s*\.|\s){2,}\s*(\d+(\.\d{1,2})?)$/;
+
+    for (const line of lines) {
+        const trimmedLine = line.trim();
+        const match = trimmedLine.match(menuItemRegex);
+        
+        if (match) {
+            const name = match[1].trim();
+            const price = parseFloat(match[2]);
+            
+            if (name.length > 2 && name.length < 50 && !isNaN(price)) {
+                items.push({ name, price });
+            }
+        }
+    }
+    return items;
+}
+
+function displayParsedItems(items) {
+    const content = $('#pdf-import-content');
+    content.innerHTML = `
+        <p class="text-sm text-muted-foreground mb-4">Found ${items.length} potential menu items. Select the ones you want to import.</p>
+        <div class="space-y-2">
+            ${items.map((item, index) => `
+                <label for="import-item-${index}" class="flex items-center p-2 bg-secondary rounded-md cursor-pointer hover:bg-muted">
+                    <input type="checkbox" id="import-item-${index}" class="h-4 w-4 mr-3" data-name="${item.name}" data-price="${item.price}" checked>
+                    <div class="flex-grow flex justify-between">
+                        <span class="font-medium">${item.name}</span>
+                        <span class="text-muted-foreground">₹${item.price.toFixed(2)}</span>
+                    </div>
+                </label>
+            `).join('')}
+        </div>
+    `;
+}
+
+// =================================================================================
+//  SECTION: SETUP & CONFIGURATION
+// =================================================================================
+const $ = (selector) => document.querySelector(selector);
+const $$ = (selector) => document.querySelectorAll(selector);
+
+const SUPABASE_URL = 'https://nfkysagcoltwlpcdpwjl.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ma3lzYWdjb2x0d2xwY2Rwd2psIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA1NjgyMjIsImV4cCI6MjA3NjE0NDIyMn0.uVVR7wzcftUyTjGuGDGcpnBpZUZWDLUuwNYf-1c-VHw';
+const supabase = self.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const state = {
+    currentPage: 'dashboard',
+    user: null,
+    confirmPromise: null,
+    audioInitialized: false,
+};
+
+const INVOICE_DETAILS = { name: "Namo Tandoori Chai", address: "SM TOWER BABA MARKET DCM VAISHALI NAGAR JAIPUR", gstin: "", phone: "", footer: "THANKYOU FOR VISITING" };
+
+const ICONS = {
+    dashboard: `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>`,
+    take_order: `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>`,
+    orders: `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>`,
+    menu: `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h20M2 6h20M2 18h20"/></svg>`,
+    customers: `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
+    staff_calls: `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>`,
+    analytics: `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M18.7 8a5 5 0 0 1-6.4 0l-4.3 4.3a5 5 0 0 1-6.4 0"/><path d="M12.3 19.3a5 5 0 0 1-6.4 0"/><path d="M22 3a5 5 0 0 1-6.4 0"/></svg>`,
+    reports: `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V7a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>`,
+    qr_codes: `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect></svg>`,
+    settings: `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>`,
+};
+
+const PAGES = {
+    dashboard: { title: "Dashboard", icon: ICONS.dashboard, render: renderDashboard },
+    take_order: { title: "Take Order", icon: ICONS.take_order, render: renderTakeOrder },
+    orders: { title: "Orders", icon: ICONS.orders, render: renderOrders },
+    menu: { title: "Menu", icon: ICONS.menu, render: renderMenu },
+    customers: { title: "Customers", icon: ICONS.customers, render: renderCustomers },
+    staff_calls: { title: "Staff Calls", icon: ICONS.staff_calls, render: renderStaffCalls },
+    analytics: { title: "Analytics", icon: ICONS.analytics, render: renderAnalytics },
+    reports: { title: "Reports", icon: ICONS.reports, render: renderReports },
+    qr_codes: { title: "QR Codes", icon: ICONS.qr_codes, render: renderQrCodes },
+    settings: { title: "Settings", icon: ICONS.settings, render: renderSettings },
+};
+
+// =================================================================================
+//  SECTION: CORE LOGIC & NAVIGATION
+// =================================================================================
+
+function navigateTo(page) {
+    if (!PAGES[page]) {
+        console.error(`Page "${page}" does not exist.`);
+        return;
+    }
+    state.currentPage = page;
+    render();
+    
+    // Close sidebar on navigation on mobile
+    const sidebar = $('#sidebar');
+    if(sidebar && !sidebar.classList.contains('lg:flex')) {
+        toggleSidebar(false);
+    }
+}
+
+function render() {
+    const navContainer = $('#sidebar-nav');
+    navContainer.innerHTML = Object.keys(PAGES).map(key => {
+        const page = PAGES[key];
+        const isActive = state.currentPage === key;
+        return `
+            <button onclick="navigateTo('${key}')" class="w-full flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors ${isActive ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-secondary hover:text-secondary-foreground'}">
+                ${page.icon}
+                ${page.title}
+            </button>
+        `;
+    }).join('');
+
+    const pageContent = $('#page-content');
+    const pageTitle = $('#page-title');
+    pageContent.innerHTML = '<div class="text-center text-muted-foreground p-8">Loading...</div>';
+    pageTitle.textContent = PAGES[state.currentPage].title;
+    
+    pageContent.classList.remove('fade-in');
+    void pageContent.offsetWidth; 
+    pageContent.classList.add('fade-in');
+
+    PAGES[state.currentPage].render(pageContent);
+}
+
+function showToast(message, isError = false) {
+    const toast = $('#toast'), p = $('#toast-message');
+    p.textContent = message;
+    toast.className = `fixed bottom-5 right-5 text-primary-foreground py-2 px-4 rounded-lg shadow-lg text-sm z-[200] ${isError ? 'bg-destructive' : 'bg-primary'}`;
+    toast.classList.remove('hidden');
+    setTimeout(() => { toast.classList.add('hidden'); }, 3000);
+}
+
+async function showConfirmation(title, message) {
+    $('#confirm-title').textContent = title;
+    $('#confirm-message').textContent = message;
+    $('#confirm-modal').classList.remove('hidden');
+    
+    return new Promise((resolve) => {
+        state.confirmPromise = resolve;
+    });
+}
+
+// =================================================================================
+//  SECTION: UTILITIES & NOTIFICATIONS
+// =================================================================================
+
+function printKOT(items, tableNumber, specialInstructions, orderId = null) {
+    const printContainer = $('#printable-area');
+    const now = new Date();
+    const kotId = orderId ? orderId.slice(0, 5).toUpperCase() : 'N/A';
+    
+    let itemsHtml = '';
+    items.forEach(item => {
+        itemsHtml += `
+            <tr>
+                <td style="vertical-align: top;">${item.name}</td>
+                <td style="vertical-align: top;">--</td>
+                <td style="vertical-align: top; text-align: center;">${item.quantity}</td>
+            </tr>
+        `;
+    });
+
+    const content = `
+        <div style="font-family: 'Courier New', monospace; font-size: 14px; width: 280px; padding: 10px; font-weight: bold; color: black;">
+            <p>Running Table</p>
+            <p>${now.toLocaleDateString()} ${now.toLocaleTimeString()}</p>
+            <p>KOT - ${kotId}</p>
+            <p>Dine In</p>
+            <p>Table No: T-${tableNumber}</p>
+            <p>Biller: ${state.user?.email || 'Admin'}</p>
+            <hr style="border-top: 1px dashed black; margin: 5px 0;">
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr>
+                        <th style="text-align: left;">Item</th>
+                        <th style="text-align: left;">Special Note</th>
+                        <th style="text-align: center;">Qty.</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${itemsHtml}
+                </tbody>
+            </table>
+            <hr style="border-top: 1px dashed black; margin: 5px 0;">
+             ${specialInstructions ? `<p><strong>Note:</strong> ${specialInstructions}</p>` : ''}
+        </div>
+    `;
+    printContainer.innerHTML = content;
+    printContainer.classList.remove('hidden');
+    window.print();
+    printContainer.classList.add('hidden');
+}
+
+function printBill(items, tableNumber, orderId = null) {
+    const printContainer = $('#printable-area');
+    const now = new Date();
+    const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    const gst = subtotal * 0.05;
+    const total = subtotal + gst;
+    
+    let itemsHtml = items.map(item => `
+        <tr>
+            <td>${item.quantity} x ${item.name}</td>
+            <td style="text-align: right;">${(item.price * item.quantity).toFixed(2)}</td>
+        </tr>
+    `).join('');
+
+    const content = `
+        <div style="font-family: 'Courier New', monospace; font-size: 14px; width: 280px; padding: 10px; text-align: center; font-weight: bold; color: black;">
+            <h3 style="font-size: 16px; margin: 0;">${INVOICE_DETAILS.name}</h3>
+            <p style="margin: 2px 0;">${INVOICE_DETAILS.address}</p>
+            ${INVOICE_DETAILS.phone ? `<p style="margin: 2px 0;">Ph: ${INVOICE_DETAILS.phone}</p>` : ''}
+            ${INVOICE_DETAILS.gstin ? `<p style="margin: 2px 0;">GSTIN: ${INVOICE_DETAILS.gstin}</p>` : ''}
+            <hr style="border-top: 1px dashed black; margin: 5px 0;">
+            <p>Date: ${now.toLocaleString()}</p>
+            <p>Table: #${tableNumber}</p>
+            ${orderId ? `<p>Order ID: ${orderId.slice(0, 8)}</p>` : ''}
+            <hr style="border-top: 1px dashed black; margin: 5px 0;">
+            <table style="width: 100%; text-align: left;">
+                ${itemsHtml}
+            </table>
+            <hr style="border-top: 1px dashed black; margin: 5px 0;">
+            <table style="width: 100%;">
+                <tr><td>Subtotal</td><td style="text-align: right;">${subtotal.toFixed(2)}</td></tr>
+                <tr><td>GST (5%)</td><td style="text-align: right;">${gst.toFixed(2)}</td></tr>
+                <tr style="font-weight: bold;"><td>Total</td><td style="text-align: right;">${total.toFixed(2)}</td></tr>
+            </table>
+            <hr style="border-top: 1px dashed black; margin: 5px 0;">
+            <p style="margin-top: 10px;">${INVOICE_DETAILS.footer}</p>
+        </div>
+    `;
+    printContainer.innerHTML = content;
+    printContainer.classList.remove('hidden');
+    window.print();
+    printContainer.classList.add('hidden');
+}
+
+
+async function renderAllCharts() {
+    // This function can be optimized by fetching data once
+    const { data: orderItems, error: itemsError } = await supabase.from('order_items').select('quantity, products(name, category, price)');
+    const { data: orders, error: ordersError } = await supabase.from('orders').select('created_at, total_amount').gte('created_at', new Date(new Date().setDate(new Date().getDate() - 30)).toISOString());
+
+    if(itemsError || ordersError) { console.error("Chart data error"); return; }
+    
+    // Top Selling Items
+    const itemCounts = orderItems.reduce((acc, item) => {
+        if (!item.products) return acc;
+        acc[item.products.name] = (acc[item.products.name] || 0) + item.quantity;
+        return acc;
+    }, {});
+    const sortedItems = Object.entries(itemCounts).sort(([,a],[,b]) => b-a).slice(0, 5);
+    if ($('#topItemsChart')) new Chart($('#topItemsChart'), { type: 'bar', data: { labels: sortedItems.map(i => i[0]), datasets: [{ label: 'Quantity Sold', data: sortedItems.map(i => i[1]), backgroundColor: '#3b82f6' }] }, options: { indexAxis: 'y', responsive: true } });
+
+    // Daily Revenue
+    const revenueByDay = orders.reduce((acc, order) => {
+        const day = new Date(order.created_at).toISOString().split('T')[0];
+        acc[day] = (acc[day] || 0) + order.total_amount;
+        return acc;
+    }, {});
+    const sortedDays = Object.entries(revenueByDay).sort(([a],[b]) => new Date(a) - new Date(b));
+    if ($('#revenueChart')) new Chart($('#revenueChart'), { type: 'line', data: { labels: sortedDays.map(d => new Date(d[0]).toLocaleDateString('en-GB', {day:'numeric', month:'short'})), datasets: [{ label: 'Daily Revenue (₹)', data: sortedDays.map(d => d[1]), borderColor: '#10b981', tension: 0.1 }] }, options: { responsive: true } });
+
+    // Revenue by Category
+    const revenueByCategory = orderItems.reduce((acc, item) => {
+        if (!item.products) return acc;
+        const category = item.products.category;
+        acc[category] = (acc[category] || 0) + (item.quantity * item.products.price);
+        return acc;
+    }, {});
+    if ($('#categoryRevenueChart')) new Chart($('#categoryRevenueChart'), { type: 'pie', data: { labels: Object.keys(revenueByCategory), datasets: [{ data: Object.values(revenueByCategory) }] }, options: { responsive: true } });
+    
+    // Peak Order Times
+    const ordersByHour = orders.reduce((acc, order) => {
+        const hour = new Date(order.created_at).getHours();
+        acc[hour] = (acc[hour] || 0) + 1;
+        return acc;
+    }, {});
+    const hours = Array.from({length: 24}, (_, i) => i);
+    if ($('#peakTimesChart')) new Chart($('#peakTimesChart'), { type: 'bar', data: { labels: hours.map(h => `${h}:00`), datasets: [{ label: 'Number of Orders', data: hours.map(h => ordersByHour[h] || 0), backgroundColor: '#f97316' }] }, options: { responsive: true } });
+}
+
+function initializeAudio() {
+    if (state.audioInitialized) return;
+    const audio = $('#notification-sound');
+    
+    const promise = audio.play();
+    if (promise !== undefined) {
+        promise.then(_ => {
+            audio.pause();
+            audio.currentTime = 0;
+            state.audioInitialized = true;
+            showToast('Sound notifications enabled!');
+            const audioPrompt = $('#audio-prompt');
+            if(audioPrompt) audioPrompt.style.display = 'none';
+        }).catch(error => {
+            console.warn("Audio could not be initialized automatically. A user interaction is needed.", error);
+            // We will try again on the next user interaction.
+        });
+    }
+}
+
+function playAlarm() {
+    if (!state.audioInitialized) {
+        console.warn("Audio not initialized. Cannot play alarm.");
+        // Attempt to initialize now
+        initializeAudio();
+        return;
+    };
+    const audio = $('#notification-sound');
+    audio.currentTime = 0;
+    audio.play().catch(e => console.error("Could not play alarm:", e));
+}
+
+function showAlert(content) {
+    playAlarm();
+    $('#alert-modal-content').innerHTML = content;
+    $('#alert-modal').classList.remove('hidden');
+}
+
+function hideAlert() {
+    $('#alert-modal').classList.add('hidden');
+}
+
+// =================================================================================
+//  SECTION: INITIALIZATION & REALTIME LISTENERS
+// =================================================================================
+
+function applyTheme(theme) {
+    if (theme === 'dark') {
+        document.documentElement.classList.add('dark');
+        document.documentElement.classList.remove('light');
+        $('#theme-icon-dark').classList.remove('hidden');
+        $('#theme-icon-light').classList.add('hidden');
+    } else {
+        document.documentElement.classList.add('light');
+        document.documentElement.classList.remove('dark');
+        $('#theme-icon-light').classList.remove('hidden');
+        $('#theme-icon-dark').classList.add('hidden');
+    }
+    localStorage.setItem('theme', theme);
+}
+
+function toggleSidebar(show) {
+    const sidebar = $('#sidebar');
+    const overlay = $('#sidebar-overlay');
+    if (show) {
+        sidebar.classList.remove('-translate-x-full');
+        overlay.classList.remove('hidden');
+    } else {
+        sidebar.classList.add('-translate-x-full');
+        overlay.classList.add('hidden');
+    }
+}
+
+async function initializeApp() {
+    $('#login-screen').classList.add('hidden');
+    $('#app-container').classList.remove('hidden');
+    
+    $('#user-email').textContent = state.user.email;
+    applyTheme(localStorage.getItem('theme') || 'light');
+    
+    // Universal click listener for audio initialization and sidebar closing
+    document.body.addEventListener('click', (e) => {
+        if (!state.audioInitialized) {
+            initializeAudio();
+        }
+        // Close sidebar if clicking on the overlay
+        if (e.target.id === 'sidebar-overlay') {
+            toggleSidebar(false);
+        }
+    }, { once: false });
+
+    $('#menu-toggle-btn').addEventListener('click', () => toggleSidebar(true));
+    $('#theme-toggle').addEventListener('click', () => applyTheme(document.documentElement.classList.contains('dark') ? 'light' : 'dark'));
+    $('#logout-btn').addEventListener('click', async () => { await supabase.auth.signOut(); window.location.reload(); });
+    
+    $('#confirm-cancel-btn').addEventListener('click', () => { $('#confirm-modal').classList.add('hidden'); if (state.confirmPromise) state.confirmPromise(false); });
+    $('#confirm-ok-btn').addEventListener('click', () => { $('#confirm-modal').classList.add('hidden'); if (state.confirmPromise) state.confirmPromise(true); });
+
+    const channel = supabase.channel('admin-notifications');
+
+    channel.on('broadcast', { event: 'new-event' }, async ({ payload }) => {
+        console.log('Realtime Broadcast Received:', payload);
+
+        // Always refresh dashboard stats
+        if (state.currentPage === 'dashboard') {
+            renderDashboard($('#page-content'));
+        }
+        
+        // Handle specific event types for pop-ups and sounds
+        if (payload.type === 'new_order') {
+            const { data } = await supabase.from('tables').select('table_number').eq('id', payload.record.table_id).single();
+            showAlert(`
+                <h2 class="text-3xl font-bold text-blue-500 mb-4">New Order!</h2>
+                <p class="text-lg text-muted-foreground mb-6">Received for Table #${data?.table_number || 'N/A'}</p>
+                <button onclick="hideAlert()" class="bg-primary text-primary-foreground px-6 py-3 rounded-lg font-bold">Acknowledge</button>
+            `);
+            if (state.currentPage === 'orders') renderOrders($('#page-content'));
+        } else if (payload.type === 'new_staff_call') {
+            const { data } = await supabase.from('tables').select('table_number').eq('id', payload.record.table_id).single();
+            showAlert(`
+                <h2 class="text-3xl font-bold text-orange-500 mb-4">Staff Call!</h2>
+                <p class="text-lg text-muted-foreground mb-6">From Table #${data?.table_number || 'N/A'}</p>
+                <button onclick="hideAlert()" class="bg-primary text-primary-foreground px-6 py-3 rounded-lg font-bold">Acknowledge</button>
+            `);
+            if (state.currentPage === 'staff_calls') renderStaffCalls($('#page-content'));
+        } else if (payload.type === 'order_update') {
+             const orderId = payload.record.id.slice(0, 6);
+             const newStatus = payload.record.status;
+             showToast(`Order #${orderId} status changed to ${newStatus}`);
+             playAlarm();
+             if (state.currentPage === 'orders') renderOrders($('#page-content'));
+        } else {
+             // Generic refresh for other changes
+            if (state.currentPage === 'menu') renderMenu($('#page-content'));
+            if (state.currentPage === 'customers') renderCustomers($('#page-content'));
+            if (state.currentPage === 'analytics') renderAllCharts();
+        }
+
+    }).subscribe((status, err) => {
+        if (status === 'SUBSCRIBED') {
+            console.log('✅ Realtime broadcast channel subscribed!');
+            showToast('Realtime connection established!');
+        }
+        if (status === 'CHANNEL_ERROR') {
+            console.error('❌ Realtime channel error.', err);
+            showToast('Realtime connection error.', true);
+        }
+        if (status === 'TIMED_OUT') {
+            console.error('❌ Realtime connection timed out.');
+            showToast('Realtime connection timed out.', true);
+        }
+    });
+
+    navigateTo('dashboard');
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+    $('#login-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        initializeAudio(); // Try to init audio on login attempt
+        const email = $('#email').value;
+        const password = $('#password').value;
+        const errorEl = $('#login-error');
+        const button = e.target.querySelector('button');
+        button.disabled = true;
+        button.textContent = "Signing In...";
+
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+
+        if (error) {
+            errorEl.textContent = error.message;
+        } else {
+            errorEl.textContent = '';
+            state.user = data.user;
+            await initializeApp();
+        }
+        button.disabled = false;
+        button.textContent = "Sign In";
+    });
+
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session) {
+        state.user = session.user;
+        await initializeApp();
+    } else {
+        $('#login-screen').classList.remove('hidden');
+    }
+});
+</script>
+</body>
+</html>
+
