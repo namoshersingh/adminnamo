@@ -1611,7 +1611,7 @@ async function initializeApp() {
             showToast('Realtime connection established!');
         }
         if (status === 'CHANNEL_ERROR') {
-            console.error('❌ Realtime channel error.', err);
+            console.error('❌ Realtime channel subscription failed with error:', err);
             showToast('Realtime connection error.', true);
         }
         if (status === 'TIMED_OUT') {
