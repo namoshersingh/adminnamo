@@ -1017,7 +1017,7 @@ async function renderReports(container) {
 
 function renderQrCodes(container) {
     container.innerHTML = `
-        <div class="max-w-md mx-auto bg-card p-8 rounded-lg shadow-sm border border-border">
+        <div class="max-w-md mx-auto bg-card p-8 rounded-lg shadow-sm border-border">
             <h3 class="text-lg font-semibold text-center mb-1">Generate Table QR Code</h3>
             <p class="text-center text-muted-foreground text-sm mb-4">Enter a table number to generate a unique QR code for your customer-facing menu.</p>
             <div class="flex space-x-2">
@@ -1039,7 +1039,7 @@ function renderQrCodes(container) {
             return;
         }
         
-        const url = `https://namoshersingh.onrender.com/?table=${tableNumber}`;
+        const url = `https://namoshersingh1.onrender.com/?table=${tableNumber}`;
         const qrcodeContainer = $('#qrcode');
         qrcodeContainer.innerHTML = '';
         
@@ -1658,4 +1658,5 @@ document.addEventListener('DOMContentLoaded', async () => {
 </script>
 </body>
 </html>
+
 
