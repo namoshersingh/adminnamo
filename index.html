@@ -378,10 +378,11 @@ async function renderDashboard(container) {
                 </div>
                 <hr class="my-3 border-border">
                 <div>
-                    <ul class="space-y-1 text-sm">
+                    <p class="text-sm font-semibold mb-2">Order Items:</p>
+                    <ul class="space-y-1 text-sm pl-2">
                         ${order.order_items.map(item => `
                             <li class="flex justify-between">
-                                <span>${item.quantity} x ${item.products ? item.products.name : '[Deleted Item]'}</span>
+                                <span>- ${item.quantity} x ${item.products ? item.products.name : '[Deleted Item]'}</span>
                             </li>
                         `).join('')}
                     </ul>
