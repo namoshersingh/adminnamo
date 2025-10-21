@@ -711,13 +711,19 @@ async function extractMenuItemsFromData(data, type) {
     const apiKey = ""; 
     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
     
-    const prompt = `Analyze the provided menu and extract all food and beverage items. For each item, identify its name, price, and category. Return the data as a valid JSON array of objects. Each object must have three keys: "itemName" (string), "price" (number, without currency symbols), and "category" (string, e.g., "Starters", "Main Course", "Beverages").`;
+    const basePrompt = `Analyze the provided menu and extract all food and beverage items. For each item, identify its name, price, and category. Return the data as a valid JSON array of objects. Each object must have three keys: "itemName" (string), "price" (number, without currency symbols), and "category" (string, e.g., "Starters", "Main Course", "Beverages").`;
     
-    const parts = [{ text: prompt }];
+    let parts;
+
     if (type === 'image') {
-        parts.push({ inline_data: { mime_type: "image/jpeg", data } });
+        parts = [
+            { text: basePrompt },
+            { inline_data: { mime_type: "image/jpeg", data } }
+        ];
     } else {
-        parts.unshift({ text: data });
+        parts = [
+            { text: `${basePrompt}\n\nHere is the menu text:\n\n${data}` }
+        ];
     }
     
     const payload = {
@@ -747,7 +753,7 @@ async function extractMenuItemsFromData(data, type) {
 
     if (!response.ok) {
         console.error("API Error:", await response.text());
-        throw new Error("Failed to communicate with the AI model.");
+        throw new Error("Failed to communicate with the AI model. Please check your network or try again.");
     }
 
     const result = await response.json();
@@ -1327,4 +1333,5 @@ document.addEventListener('DOMContentLoaded', () => {
 
 </body>
 </html>
+
 
