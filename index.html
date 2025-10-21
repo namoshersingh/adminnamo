@@ -157,6 +157,7 @@ const PAGES = {
     feedback: { title: "Feedback", icon: ICONS.feedback, render: renderFeedback },
     games: { title: "Games & Slang", icon: ICONS.games, render: renderGames },
     qr: { title: "QR Generator", icon: ICONS.qr, render: renderQrGenerator },
+    pos_bridge: { title: "POS Order Entry", render: renderPosBridge, isHidden: true }
 };
 
 const auth = {
@@ -209,12 +210,13 @@ const auth = {
 //  SECTION 2: CORE UI & NAVIGATION
 // =================================================================================
 
-function navigateTo(page) {
+function navigateTo(page, params = null) {
     if (!PAGES[page]) return;
     state.currentPage = page;
     
     $('#sidebar-nav').innerHTML = Object.keys(PAGES).map(key => {
         const p = PAGES[key];
+        if (p.isHidden) return '';
         const isActive = state.currentPage === key;
         return `<button onclick="navigateTo('${key}')" class="w-full flex items-center px-4 py-2 text-sm font-medium rounded-lg ${isActive ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-secondary'}">${p.icon}${p.title}</button>`;
     }).join('');
@@ -222,7 +224,7 @@ function navigateTo(page) {
     $('#page-title').textContent = PAGES[state.currentPage].title;
     const contentContainer = $('#page-content');
     contentContainer.innerHTML = `<div class="text-center text-muted-foreground">Loading...</div>`;
-    PAGES[state.currentPage].render(contentContainer);
+    PAGES[state.currentPage].render(contentContainer, params);
 }
 
 function showToast(message, isError = false) {
@@ -283,7 +285,10 @@ const live = {
                             <h2 class="font-display text-3xl font-bold text-destructive mb-4">New Order!</h2>
                             <p class="text-lg text-muted-foreground mb-1">Table #${order.tables?.table_number || 'N/A'}</p>
                             <p class="text-lg text-muted-foreground mb-6">By ${order.customers?.name || 'N/A'}</p>
-                            <button onclick="hideLiveAlert()" class="bg-primary text-primary-foreground px-6 py-3 rounded-lg font-bold">Acknowledge</button>
+                            <div class="flex gap-2 justify-center">
+                                <button onclick="openPosBridge('${order.id}')" class="bg-blue-500 text-white px-6 py-3 rounded-lg font-bold">Enter in POS</button>
+                                <button onclick="hideLiveAlert()" class="bg-primary text-primary-foreground px-6 py-3 rounded-lg font-bold">Acknowledge</button>
+                            </div>
                         `);
                     }
                     if (payload.table === 'staff_calls' && payload.new.status === 'pending') {
@@ -332,9 +337,10 @@ async function renderDashboard(container) {
                     </div>
                     <span class="font-semibold capitalize text-xs p-1 rounded ${order.status === 'received' ? 'bg-yellow-100 text-yellow-800' : 'bg-blue-100 text-blue-800'}">${order.status}</span>
                 </div>
-                <div class="mt-4 flex gap-2">
-                    ${order.status === 'received' ? `<button onclick="updateOrderStatus('${order.id}', 'preparing')" class="flex-1 bg-secondary text-secondary-foreground font-semibold p-2 rounded-md text-sm">Start Preparing</button>` : ''}
-                    ${order.status === 'preparing' ? `<button onclick="updateOrderStatus('${order.id}', 'delivered')" class="flex-1 bg-green-500 text-white font-semibold p-2 rounded-md text-sm">Mark Delivered</button>` : ''}
+                <div class="mt-4 grid grid-cols-2 gap-2">
+                    <button onclick="openPosBridge('${order.id}')" class="w-full col-span-2 bg-blue-500 text-white font-semibold p-2 rounded-md text-sm">Enter in POS</button>
+                    ${order.status === 'received' ? `<button onclick="updateOrderStatus('${order.id}', 'preparing')" class="w-full bg-secondary text-secondary-foreground font-semibold p-2 rounded-md text-sm">Start Preparing</button>` : ''}
+                    ${order.status === 'preparing' ? `<button onclick="updateOrderStatus('${order.id}', 'delivered')" class="w-full bg-green-500 text-white font-semibold p-2 rounded-md text-sm">Mark Delivered</button>` : ''}
                 </div>
             </div>`).join('');
     }
@@ -422,6 +428,7 @@ async function renderOrders(container){
                 </div>
             </div>
             <div class="mt-2 flex space-x-4">
+                <button onclick="openPosBridge('${order.id}')" class="text-blue-600 hover:underline text-sm font-semibold">Enter in POS</button>
                 <button onclick="pos.printKOT('${order.id}')" class="text-blue-600 hover:underline text-sm font-semibold">Print KOT</button>
                 <button onclick="deleteOrder('${order.id}')" class="text-destructive hover:underline text-sm font-semibold">Delete</button>
             </div>
@@ -725,6 +732,86 @@ async function renderQrGenerator(container) {
     });
 }
 
+async function renderPosBridge(container, params) {
+    if (!params || !params.orderId) {
+        container.innerHTML = `<p class="text-destructive">Error: No order ID provided.</p>`;
+        return;
+    }
+    const orderId = params.orderId;
+    const PETPOOJA_URL = 'https://pos.petpooja.com/'; 
+
+    container.innerHTML = `
+        <div class="bg-card p-4 rounded-lg shadow-sm">
+            <div class="mb-4 p-4 border border-yellow-300 bg-yellow-50 rounded-lg text-yellow-800 text-sm">
+                <strong>Note:</strong> This page attempts to load the Pet Pooja dashboard side-by-side for easy order entry. If the right-hand panel remains blank or shows an error, it means Pet Pooja's security settings prevent it from being embedded.
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 h-[calc(100vh-12rem)]">
+                <!-- Left Column: Order Details -->
+                <div class="md:col-span-1 bg-secondary p-4 rounded-lg overflow-y-auto" id="pos-bridge-order-details">
+                    <p class="text-center text-muted-foreground">Loading order details...</p>
+                </div>
+                <!-- Right Column: Pet Pooja Iframe -->
+                <div class="md:col-span-2 border border-border rounded-lg overflow-hidden">
+                    <iframe src="${PETPOOJA_URL}" class="w-full h-full border-0"></iframe>
+                </div>
+            </div>
+        </div>
+    `;
+
+    const detailsContainer = $('#pos-bridge-order-details');
+    try {
+        const { data: order, error } = await supabase
+            .from('orders')
+            .select('*, customers(name), tables(table_number), order_items(*, products(name))')
+            .eq('id', orderId)
+            .single();
+
+        if (error || !order) throw new Error(error?.message || 'Order not found');
+
+        let orderDetailsHtml = `
+            <h3 class="font-display text-xl font-bold mb-2">Order Entry</h3>
+            <div class="space-y-4">
+                <div class="bg-card p-3 rounded-md">
+                    <p class="text-sm text-muted-foreground">Order ID</p>
+                    <p class="font-mono text-sm">${order.id.slice(0, 8)}</p>
+                </div>
+                <div class="bg-card p-3 rounded-md">
+                    <p class="text-sm text-muted-foreground">Table & Customer</p>
+                    <p class="font-semibold text-lg">Table: ${order.tables.table_number}</p>
+                    <p class="font-semibold text-lg">Customer: ${order.customers.name}</p>
+                </div>
+                <div class="bg-card p-3 rounded-md">
+                    <p class="text-sm text-muted-foreground mb-2">Items</p>
+                    <ul class="divide-y divide-border">
+                        ${order.order_items.map(item => `
+                            <li class="py-2">
+                                <p class="font-bold text-lg">${item.products.name}</p>
+                                <p class="text-muted-foreground">Quantity: <span class="font-mono text-lg font-bold">${item.quantity}</span></p>
+                            </li>
+                        `).join('')}
+                    </ul>
+                </div>
+        `;
+        if (order.special_instructions) {
+            orderDetailsHtml += `
+                <div class="bg-red-50 border border-red-200 p-3 rounded-md">
+                    <p class="text-sm text-red-700 font-bold">Special Instructions</p>
+                    <p class="text-red-900">${order.special_instructions}</p>
+                </div>
+            `;
+        }
+         orderDetailsHtml += `</div>`;
+        detailsContainer.innerHTML = orderDetailsHtml;
+
+    } catch (e) {
+        detailsContainer.innerHTML = `<p class="text-destructive">Failed to load order details: ${e.message}</p>`;
+    }
+}
+
+
+// =================================================================================
+//  SECTION 4: ACTION HANDLERS
+// =================================================================================
 
 async function updateOrderStatus(orderId, newStatus) {
     const { error } = await supabase.from('orders').update({ status: newStatus }).eq('id', orderId);
@@ -734,6 +821,10 @@ async function updateOrderStatus(orderId, newStatus) {
 async function resolveStaffCall(callId) {
     const { error } = await supabase.from('staff_calls').update({ status: 'resolved' }).eq('id', callId);
     if (error) showToast('Could not resolve call.', true);
+}
+
+function openPosBridge(orderId) {
+    navigateTo('pos_bridge', { orderId });
 }
 
 async function deleteCustomer(customerId) {
@@ -754,7 +845,7 @@ async function deleteOrder(orderId) {
 
 
 // =================================================================================
-//  SECTION 4: POS & KOT LOGIC
+//  SECTION 5: POS & KOT LOGIC
 // =================================================================================
 
 const pos = {
