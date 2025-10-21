@@ -37,15 +37,6 @@
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes slideUp { from { transform: translateY(50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .tab-btn {
-            padding: 8px 16px;
-            border-bottom: 2px solid transparent;
-            cursor: pointer;
-        }
-        .tab-btn.active {
-            border-bottom-color: var(--primary);
-            color: var(--primary);
-        }
     </style>
 </head>
 <body class="antialiased">
@@ -506,7 +497,7 @@ async function renderMenu(container){
             <h3 class="text-lg font-semibold">Menu Items</h3>
             <div>
                  <button id="add-item-btn" class="bg-secondary text-secondary-foreground px-4 py-2 rounded-lg text-sm font-medium mr-2">Add Manually</button>
-                 <button id="upload-menu-btn" class="bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm font-medium">Add / Upload Menu</button>
+                 <button id="upload-menu-btn" class="bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm font-medium">Bulk Add from Text</button>
             </div>
         </div>
         <div class="bg-card rounded-lg shadow-sm">
@@ -602,7 +593,7 @@ async function renderMenu(container){
     await loadMenu();
 
     $('#add-item-btn').addEventListener('click', () => openManualModal());
-    $('#upload-menu-btn').addEventListener('click', () => openUploadModal());
+    $('#upload-menu-btn').addEventListener('click', () => openTextUploadModal());
     container.addEventListener('click', async (e) => {
         if (e.target.classList.contains('edit-item-btn')) {
             const { data } = await supabase.from('products').select('*').eq('id', e.target.dataset.id).single();
@@ -619,158 +610,77 @@ async function renderMenu(container){
 }
 
 // =================================================================================
-//  SECTION 3.5: AI MENU UPLOAD
+//  SECTION 3.5: MENU TEXT PARSER
 // =================================================================================
 
-function openUploadModal() {
-    showModal('upload-menu-modal', `
-        <h3 class="text-lg font-semibold mb-4">Upload Menu</h3>
-        <div class="border-b border-border flex">
-            <button class="tab-btn active" data-tab="image-upload">Upload Image</button>
-            <button class="tab-btn" data-tab="text-paste">Paste Text</button>
-        </div>
-        <div id="upload-content" class="mt-4">
-            <!-- Content will be injected by tab clicks -->
-        </div>
+function openTextUploadModal() {
+    showModal('upload-text-modal', `
+        <h3 class="text-lg font-semibold mb-4">Bulk Add Menu from Text</h3>
+        <p class="text-sm text-muted-foreground mb-2">Paste your menu text below. The system will try to extract items, prices, and categories.</p>
+        <p class="text-xs text-muted-foreground mb-2"><b>Tip:</b> Put category names on their own lines (e.g., "Starters", "Main Course").</p>
+        <textarea id="menu-text-input" rows="10" class="w-full p-2 bg-secondary rounded-md border border-border" placeholder="e.g.\nStarters\nSamosa - 25\nKachori - 30\n\nMains\nPaneer Butter Masala - 250"></textarea>
         <div id="upload-results" class="mt-4"></div>
+        <div class="flex justify-end mt-4">
+             <button id="process-menu-btn" class="bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm">Process Text</button>
+        </div>
     `, 'max-w-3xl');
 
-    const modal = $('#upload-menu-modal');
-    
-    const switchTab = (tabName) => {
-        modal.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-        modal.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
-        
-        let content = '';
-        if (tabName === 'image-upload') {
-            content = `
-                <p class="text-sm text-muted-foreground mb-2">Upload an image of your menu (e.g., a photo or a screenshot of a PDF).</p>
-                <input type="file" id="menu-image-input" accept="image/*" class="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:bg-secondary file:text-secondary-foreground">
-                <div class="text-xs text-amber-600 bg-amber-50 p-2 rounded-md mt-2"><b>Note:</b> PDF files are not directly supported. Please take a screenshot of your PDF page and upload it as an image.</div>
-            `;
-        } else if (tabName === 'text-paste') {
-            content = `
-                <p class="text-sm text-muted-foreground mb-2">Copy and paste your menu text below.</p>
-                <textarea id="menu-text-input" rows="8" class="w-full p-2 bg-secondary rounded-md border border-border" placeholder="e.g.\nStarters\nSamosa - 25\nKachori - 30\n\nMains\nPaneer Butter Masala - 250"></textarea>
-            `;
-        }
-        $('#upload-content').innerHTML = content;
-        $('#upload-results').innerHTML = `
-            <div class="flex justify-end mt-4">
-                <button id="process-menu-btn" class="bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm">Process Menu</button>
-            </div>`;
-    }
-
-    modal.addEventListener('click', (e) => {
-        if (e.target.matches('.tab-btn')) {
-            switchTab(e.target.dataset.tab);
-        }
-        if (e.target.id === 'process-menu-btn') {
-            handleMenuUpload();
-        }
-    });
-
-    switchTab('image-upload');
+    $('#process-menu-btn').addEventListener('click', handleTextUpload);
 }
 
-async function handleMenuUpload() {
-    const activeTab = $('#upload-menu-modal .tab-btn.active').dataset.tab;
+function handleTextUpload() {
+    const text = $('#menu-text-input').value;
     const resultsContainer = $('#upload-results');
-    resultsContainer.innerHTML = `<div class="flex items-center justify-center p-8"><div class="spinner mr-2" style="border-color: var(--primary); border-top-color: transparent;"></div> Processing with AI...</div>`;
-    
-    let extractedItems = null;
-    try {
-        if (activeTab === 'image-upload') {
-            const file = $('#menu-image-input').files[0];
-            if (!file) throw new Error('Please select an image file.');
-            const base64Data = await toBase64(file);
-            extractedItems = await extractMenuItemsFromData(base64Data, "image");
-        } else {
-            const text = $('#menu-text-input').value;
-            if (!text.trim()) throw new Error('Please paste some menu text.');
-            extractedItems = await extractMenuItemsFromData(text, "text");
-        }
+    resultsContainer.innerHTML = `<div class="text-center p-4">Parsing...</div>`;
 
-        if (!extractedItems || extractedItems.length === 0) {
-            throw new Error("The AI couldn't find any menu items. Please try a clearer image or more structured text.");
-        }
-        displayExtractedItems(extractedItems);
-    } catch (error) {
-        resultsContainer.innerHTML = `<p class="text-destructive text-center">${error.message}</p>`;
+    if (!text.trim()) {
+        resultsContainer.innerHTML = `<p class="text-destructive text-center">Please paste some menu text.</p>`;
+        return;
     }
+    
+    const extractedItems = parseMenuFromText(text);
+
+    if (extractedItems.length === 0) {
+        resultsContainer.innerHTML = `<p class="text-amber-700 text-center">Couldn't find any items. Make sure items have a name and a price on the same line.</p>`;
+        return;
+    }
+    
+    displayExtractedItems(extractedItems);
 }
 
-const toBase64 = file => new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => resolve(reader.result.split(',')[1]);
-    reader.onerror = error => reject(error);
-});
+function parseMenuFromText(text) {
+    const lines = text.split('\n').filter(line => line.trim() !== '');
+    const items = [];
+    let currentCategory = 'Uncategorized';
+    const itemRegex = /^(.*?)\s*[–-]?\s*(\d+(\.\d+)?)$/;
 
-async function extractMenuItemsFromData(data, type) {
-    const apiKey = ""; 
-    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
-    
-    const basePrompt = `Analyze the provided menu and extract all food and beverage items. For each item, identify its name, price, and category. Return the data as a valid JSON array of objects. Each object must have three keys: "itemName" (string), "price" (number, without currency symbols), and "category" (string, e.g., "Starters", "Main Course", "Beverages").`;
-    
-    let parts;
-
-    if (type === 'image') {
-        parts = [
-            { text: basePrompt },
-            { inline_data: { mime_type: "image/jpeg", data } }
-        ];
-    } else {
-        parts = [
-            { text: `${basePrompt}\n\nHere is the menu text:\n\n${data}` }
-        ];
-    }
-    
-    const payload = {
-        contents: [{ parts }],
-        generationConfig: {
-            responseMimeType: "application/json",
-            responseSchema: {
-                type: "ARRAY",
-                items: {
-                    type: "OBJECT",
-                    properties: {
-                        itemName: { type: "STRING" },
-                        price: { type: "NUMBER" },
-                        category: { type: "STRING" }
-                    },
-                    required: ["itemName", "price", "category"]
-                }
+    for (const line of lines) {
+        const match = line.trim().match(itemRegex);
+        if (match) {
+            const itemName = match[1].trim().replace(/[\.,]$/, ''); // Clean trailing dots/commas
+            const price = parseFloat(match[2]);
+            if (itemName) { // Ensure we have an item name
+                 items.push({ itemName, price, category: currentCategory });
             }
+        } else {
+            currentCategory = line.trim();
         }
-    };
-
-    const response = await fetch(apiUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-    });
-
-    if (!response.ok) {
-        console.error("API Error:", await response.text());
-        throw new Error("Failed to communicate with the AI model. Please check your network or try again.");
     }
-
-    const result = await response.json();
-    const jsonText = result.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!jsonText) {
-        console.error("Invalid API response structure:", result);
-        throw new Error("The AI returned an unexpected response. Please try again.");
-    }
-    return JSON.parse(jsonText);
+    return items;
 }
+
 
 function displayExtractedItems(items) {
     const resultsContainer = $('#upload-results');
     resultsContainer.innerHTML = `
         <h4 class="font-semibold mb-2">Review Extracted Items</h4>
-        <p class="text-sm text-muted-foreground mb-4">Please review the items extracted by the AI. You can make corrections below before saving.</p>
-        <div id="extracted-items-table" class="space-y-2 max-h-64 overflow-y-auto pr-2">
+        <p class="text-sm text-muted-foreground mb-4">Please review the items found. You can make corrections below before saving.</p>
+        <div class="grid grid-cols-12 gap-2 items-center text-sm font-semibold text-muted-foreground px-2">
+            <div class="col-span-5">Name</div>
+            <div class="col-span-3">Price</div>
+            <div class="col-span-4">Category</div>
+        </div>
+        <div id="extracted-items-table" class="space-y-2 max-h-64 overflow-y-auto pr-2 mt-2">
             ${items.map((item, index) => `
                 <div class="grid grid-cols-12 gap-2 items-center text-sm" data-index="${index}">
                     <input type="text" value="${item.itemName || ''}" class="col-span-5 p-1 bg-secondary rounded-md border border-border item-name">
@@ -783,7 +693,8 @@ function displayExtractedItems(items) {
             <button id="save-extracted-btn" class="bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm">Save to Menu</button>
         </div>
     `;
-
+    // Hide the initial process button
+    $('#process-menu-btn').parentElement.classList.add('hidden');
     $('#save-extracted-btn').addEventListener('click', saveExtractedItems);
 }
 
@@ -810,7 +721,7 @@ async function saveExtractedItems() {
         showToast(`Error saving items: ${error.message}`, true);
     } else {
         showToast(`${itemsToSave.length} items added to your menu!`);
-        closeModal('upload-menu-modal');
+        closeModal('upload-text-modal');
         renderMenu($('#page-content'));
     }
 }
@@ -1333,5 +1244,4 @@ document.addEventListener('DOMContentLoaded', () => {
 
 </body>
 </html>
-
 
