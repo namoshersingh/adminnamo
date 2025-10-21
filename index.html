@@ -380,11 +380,14 @@ async function renderDashboard(container) {
                 <div>
                     <p class="text-sm font-semibold mb-2">Order Items:</p>
                     <ul class="space-y-1 text-sm pl-2">
-                        ${order.order_items.map(item => `
-                            <li class="flex justify-between">
-                                <span>- ${item.quantity} x ${item.products ? item.products.name : '[Deleted Item]'}</span>
-                            </li>
-                        `).join('')}
+                        ${(order.order_items && order.order_items.length > 0)
+                            ? order.order_items.map(item => `
+                                <li class="flex justify-between">
+                                    <span>- ${item.quantity} x ${item.products ? item.products.name : '[Deleted Item]'}</span>
+                                </li>
+                            `).join('')
+                            : '<li><span class="text-muted-foreground text-xs">No items found for this order.</span></li>'
+                        }
                     </ul>
                 </div>
                 <div class="mt-4 grid grid-cols-2 gap-2">
@@ -885,12 +888,15 @@ async function renderPosBridge(container, params) {
                 <div class="bg-card p-3 rounded-md">
                     <p class="text-sm text-muted-foreground mb-2">Items</p>
                     <ul class="divide-y divide-border">
-                        ${order.order_items.map(item => `
+                       ${(order.order_items && order.order_items.length > 0)
+                            ? order.order_items.map(item => `
                             <li class="py-2">
                                 <p class="font-bold text-lg">${item.products ? item.products.name : '[Deleted Item]'}</p>
                                 <p class="text-muted-foreground">Quantity: <span class="font-mono text-lg font-bold">${item.quantity}</span></p>
                             </li>
-                        `).join('')}
+                        `).join('')
+                            : '<li><span class="text-muted-foreground text-sm">No items found for this order.</span></li>'
+                        }
                     </ul>
                 </div>
         `;
