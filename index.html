@@ -298,13 +298,12 @@ const live = {
     listenForChanges() {
         supabase.channel('public-changes')
             .on('postgres_changes', { event: '*', schema: 'public' }, async payload => {
-                if (isMobile()) {
-                    renderDashboard($('#mobile-page-content'));
-                } else {
-                    const refreshablePages = ['dashboard', 'orders', 'customers', 'feedback', 'menu', 'games'];
-                    if (refreshablePages.includes(state.currentPage)) {
-                        PAGES[state.currentPage].render($('#page-content'));
-                    }
+                const targetContainer = isMobile() ? $('#mobile-page-content') : $('#page-content');
+                const targetPage = isMobile() ? 'dashboard' : state.currentPage;
+                
+                const refreshablePages = ['dashboard', 'orders', 'customers', 'feedback', 'menu', 'games'];
+                if (refreshablePages.includes(targetPage)) {
+                    PAGES[targetPage].render(targetContainer);
                 }
 
                 if (payload.eventType === 'INSERT') {
@@ -360,9 +359,12 @@ async function renderDashboard(container) {
     ]);
 
     const ordersContainer = container.querySelector('#live-orders');
-    if (ordersRes.error) ordersContainer.innerHTML = `<p class="text-destructive">Error loading orders.</p>`;
-    else if (ordersRes.data.length === 0) ordersContainer.innerHTML = `<p class="text-muted-foreground">No active orders.</p>`;
-    else {
+    if (ordersRes.error) {
+        ordersContainer.innerHTML = `<p class="text-destructive">Error loading orders.</p>`;
+        console.error("Order fetch error:", ordersRes.error);
+    } else if (ordersRes.data.length === 0) {
+        ordersContainer.innerHTML = `<p class="text-muted-foreground">No active orders.</p>`;
+    } else {
         ordersContainer.innerHTML = ordersRes.data.map(order => {
             const mobileView = isMobile();
             return `
@@ -379,7 +381,7 @@ async function renderDashboard(container) {
                     <ul class="space-y-1 text-sm">
                         ${order.order_items.map(item => `
                             <li class="flex justify-between">
-                                <span>${item.quantity} x ${item.products.name}</span>
+                                <span>${item.quantity} x ${item.products ? item.products.name : '[Deleted Item]'}</span>
                             </li>
                         `).join('')}
                     </ul>
@@ -884,7 +886,7 @@ async function renderPosBridge(container, params) {
                     <ul class="divide-y divide-border">
                         ${order.order_items.map(item => `
                             <li class="py-2">
-                                <p class="font-bold text-lg">${item.products.name}</p>
+                                <p class="font-bold text-lg">${item.products ? item.products.name : '[Deleted Item]'}</p>
                                 <p class="text-muted-foreground">Quantity: <span class="font-mono text-lg font-bold">${item.quantity}</span></p>
                             </li>
                         `).join('')}
